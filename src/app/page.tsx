@@ -1,10 +1,9 @@
+import { CHAT_LIMIT } from "@/app/constants";
 import { TopBar } from "@/components/top-bar";
 
 import { DB, getChat, loadChats, loadMemories } from "@/lib/persistence-layer";
 import { Chat } from "./chat";
 import { SideBar } from "@/components/side-bar";
-
-export const CHAT_LIMIT = 10;
 
 const ChatBotDemo = async (props: {
   searchParams: Promise<{ chatId?: string }>;
