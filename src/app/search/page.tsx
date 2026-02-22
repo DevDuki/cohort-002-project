@@ -6,7 +6,7 @@ import { PerPageSelector } from "./per-page-selector";
 import fs from "fs/promises";
 import path from "path";
 import { loadChats, loadMemories } from "@/lib/persistence-layer";
-import { CHAT_LIMIT } from "../page";
+import { CHAT_LIMIT } from "../constants";
 import { SideBar } from "@/components/side-bar";
 
 interface Email {
