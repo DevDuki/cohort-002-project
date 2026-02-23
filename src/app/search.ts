@@ -6,13 +6,16 @@ export interface Email {
   id: string;
   threadId: string;
   from: string;
-  to: string;
+  to: string | string[];
+  cc?: string[];
   subject: string;
   body: string;
   timestamp: string;
-  inReplyTo: string;
-  references: string[];
-  priority: "normal" | "low" | "high";
+  inReplyTo?: string;
+  references?: string[];
+  labels?: string[];
+  arcId?: string;
+  phaseId?: number;
 }
 
 export async function searchWithBM25(keywords: string[], emails: Email[]) {
@@ -29,7 +32,7 @@ export async function searchWithBM25(keywords: string[], emails: Email[]) {
 }
 
 export async function loadEmails(): Promise<Email[]> {
-  const filePath = path.join(process.cwd(), "data", "personal-emails.json");
+  const filePath = path.join(process.cwd(), "data", "emails.json");
   const fileContent = await fs.readFile(filePath, "utf-8");
   return JSON.parse(fileContent);
 }
