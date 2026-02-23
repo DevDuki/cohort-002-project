@@ -79,7 +79,7 @@ export async function searchWithBM25(
 }
 
 export async function loadEmails(): Promise<Email[]> {
-  const filePath = path.join(process.cwd(), "data", "personal-emails.json");
+  const filePath = path.join(process.cwd(), "data", "emails.json");
   const fileContent = await fs.readFile(filePath, "utf-8");
   return JSON.parse(fileContent);
 }
