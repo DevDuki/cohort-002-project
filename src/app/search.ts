@@ -152,11 +152,11 @@ export async function searchWithEmbeddings(
   // Load cached embeddings
   const emailEmbeddings = await loadOrGenerateEmbeddings(emailChunks);
 
-  // Generate query embedding
   if (!query) {
-    return []
+    return [];
   }
 
+  // Generate query embedding
   const { embedding: queryEmbedding } = await embed({
     model: google.textEmbeddingModel("gemini-embedding-001"),
     value: query,
