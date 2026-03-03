@@ -9,7 +9,7 @@ import { SearchPagination } from "./search-pagination";
 import {
   loadEmails,
   loadOrGenerateEmbeddings,
-  searchWithBM25,
+  searchWithEmbeddings,
 } from "../search";
 
 export default async function SearchPage(props: {
@@ -26,8 +26,8 @@ export default async function SearchPage(props: {
 
   console.log("Email embeddings loaded:", embeddings.length);
 
-  const emailsWithScores = await searchWithBM25(
-    query.toLowerCase().split(" "),
+  const emailsWithScores = await searchWithEmbeddings(
+    query,
     allEmails
   );
 
