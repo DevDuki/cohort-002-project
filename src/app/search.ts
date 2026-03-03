@@ -1,8 +1,8 @@
-import BM25 from "okapibm25";
-import fs from "fs/promises";
-import path from "path";
-import { embed, embedMany, cosineSimilarity } from "ai";
 import { google } from "@ai-sdk/google";
+import { cosineSimilarity, embed, embedMany } from "ai";
+import fs from "fs/promises";
+import BM25 from "okapibm25";
+import path from "path";
 
 export interface Email {
   id: string;
@@ -18,6 +18,44 @@ export interface Email {
   labels?: string[];
   arcId?: string;
   phaseId?: number;
+}
+
+export const searchWithRRF = async (query: string, emails: Email[]) => {
+  const bm25Ranking = await searchWithBM25(
+    query.toLowerCase().split(" "),
+    emails
+  );
+  const embeddingsRanking = await searchWithEmbeddings(query, emails);
+  return reciprocalRankFusion([bm25Ranking, embeddingsRanking]);
+};
+
+const RRF_K = 60;
+export function reciprocalRankFusion(
+  rankings: { email: Email; score: number }[][]
+): { email: Email; score: number }[] {
+  const rrfScores = new Map<string, number>();
+  const emailMap = new Map<string, Email>();
+
+  // Process each ranking list (BM25 and embeddings)
+  rankings.forEach((ranking) => {
+    ranking.forEach((item, rank) => {
+      const currentScore = rrfScores.get(item.email.id) || 0;
+
+      // Position-based scoring: 1/(k+rank)
+      const contribution = 1 / (RRF_K + rank);
+      rrfScores.set(item.email.id, currentScore + contribution);
+
+      emailMap.set(item.email.id, item.email);
+    });
+  });
+
+  // Sort by combined RRF score descending
+  return Array.from(rrfScores.entries())
+    .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
+    .map(([emailId, score]) => ({
+      score,
+      email: emailMap.get(emailId)!,
+    }));
 }
 
 export async function searchWithBM25(keywords: string[], emails: Email[]) {

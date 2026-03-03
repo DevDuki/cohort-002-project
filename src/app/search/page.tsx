@@ -9,7 +9,7 @@ import { SearchPagination } from "./search-pagination";
 import {
   loadEmails,
   loadOrGenerateEmbeddings,
-  searchWithEmbeddings,
+  searchWithRRF,
 } from "../search";
 
 export default async function SearchPage(props: {
@@ -26,10 +26,7 @@ export default async function SearchPage(props: {
 
   console.log("Email embeddings loaded:", embeddings.length);
 
-  const emailsWithScores = await searchWithEmbeddings(
-    query,
-    allEmails
-  );
+  const emailsWithScores = await searchWithRRF(query, allEmails);
 
   // Transform emails to match the expected format
   const transformedEmails = emailsWithScores
