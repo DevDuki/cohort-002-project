@@ -1,20 +1,17 @@
-import {
-  appendToChatMessages,
-  createChat,
-  DB,
-  getChat,
-  updateChatTitle,
-} from "@/lib/persistence-layer";
+import { appendToChatMessages, createChat, getChat, updateChatTitle, } from "@/lib/persistence-layer";
 import { google } from "@ai-sdk/google";
 import {
   convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
   safeValidateUIMessages,
+  stepCountIs,
   streamText,
   UIMessage,
 } from "ai";
 import { generateTitleForChat } from "./generate-title";
+import { searchTool } from "./search-tool";
+
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -62,12 +59,11 @@ export async function POST(req: Request) {
       let generateTitlePromise: Promise<void> | undefined = undefined;
 
       if (!chat) {
-        const newChat = await createChat({
+        chat = await createChat({
           id: chatId,
           title: "Generating title...",
           initialMessages: messages,
         });
-        chat = newChat;
 
         writer.write({
           type: "data-frontend-action",
@@ -91,8 +87,32 @@ export async function POST(req: Request) {
       }
 
       const result = streamText({
-        model: google("gemini-2.5-flash-lite"),
+        model: google("gemini-2.5-flash"),
         messages: convertToModelMessages(messages),
+        // Add system prompt directing agent to use search
+        system: `
+          <task-context>
+          You are an email assistant that helps users find and understand information from their emails.
+          </task-context>
+          
+          <rules>
+          - You MUST use the search tool for ANY question about emails, people, amounts, dates, or specific information
+          - NEVER answer from your training data - always search the actual emails first
+          - If the first search doesn't find enough information, try different keywords or search queries
+          - Use both semantic (searchQuery) and keyword (keywords) search parameters together for best results
+          - Only after searching should you formulate your answer based on the search results
+          </rules>
+          
+          <the-ask>
+          Here is the user's question. Search their emails first, then provide your answer based on what you find.
+          </the-ask>
+        `,
+        // Add the search tool to available tools
+        tools: {
+          search: searchTool,
+        },
+        // Stop after 10 steps to prevent infinite loops
+        stopWhen: [stepCountIs(10)],
       });
 
       writer.merge(

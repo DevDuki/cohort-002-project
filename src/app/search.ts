@@ -75,11 +75,11 @@ export async function searchWithEmbeddings(query: string, emails: Email[]) {
   // Load cached embeddings
   const emailEmbeddings = await loadOrGenerateEmbeddings(emails);
 
-  // Generate query embedding
   if (!query) {
-    return []
+    return [];
   }
 
+  // Generate query embedding
   const { embedding: queryEmbedding } = await embed({
     model: google.textEmbeddingModel("gemini-embedding-001"),
     value: query,
@@ -91,8 +91,6 @@ export async function searchWithEmbeddings(query: string, emails: Email[]) {
     const score = cosineSimilarity(queryEmbedding, embedding);
     return { score, email };
   });
-
-  console.log("Results:", results.length);
 
   // Sort by similarity descending
   return results.sort((a, b) => b.score - a.score);
