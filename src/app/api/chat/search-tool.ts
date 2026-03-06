@@ -6,12 +6,12 @@ import {
   searchWithEmbeddings,
 } from "@/app/search";
 import { rerankEmails } from "@/app/rerank";
-import { tool } from "ai";
+import { convertToModelMessages, tool, UIMessage } from "ai";
 import { z } from "zod";
 
 const NUMBER_PASSED_TO_RERANKER = 30;
 
-export const searchTool = tool({
+export const searchTool = (messages: UIMessage[]) => tool({
   description:
     "Search emails using both keyword and semantic search. Returns most relevant emails ranked by reciprocal rank fusion.",
   inputSchema: z.object({
@@ -46,11 +46,16 @@ export const searchTool = tool({
       embeddingResults.slice(0, NUMBER_PASSED_TO_RERANKER),
     ]);
 
+    const conversationHistory = convertToModelMessages(messages).filter(
+      (m) => m.role === "user" || m.role === "assistant"
+    );
+
     // Rerank results using LLM
     const query = [keywords?.join(" "), searchQuery].filter(Boolean).join(" ");
     const rerankedResults = await rerankEmails(
       rrfResults.slice(0, NUMBER_PASSED_TO_RERANKER),
-      query
+      query,
+      conversationHistory
     );
 
     // Return full email objects

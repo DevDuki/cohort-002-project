@@ -1,10 +1,4 @@
-import {
-  appendToChatMessages,
-  createChat,
-  DB,
-  getChat,
-  updateChatTitle,
-} from "@/lib/persistence-layer";
+import { appendToChatMessages, createChat, getChat, updateChatTitle, } from "@/lib/persistence-layer";
 import { google } from "@ai-sdk/google";
 import {
   convertToModelMessages,
@@ -64,12 +58,12 @@ export async function POST(req: Request) {
       let generateTitlePromise: Promise<void> | undefined = undefined;
 
       if (!chat) {
-        const newChat = await createChat({
+
+        chat = await createChat({
           id: chatId,
           title: "Generating title...",
           initialMessages: messages,
         });
-        chat = newChat;
 
         writer.write({
           type: "data-frontend-action",
@@ -113,7 +107,7 @@ Here is the user's question. Search their emails first, then provide your answer
 </the-ask>
         `,
         tools: {
-          search: searchTool,
+          search: searchTool(messages),
         },
         stopWhen: [stepCountIs(10)],
       });
