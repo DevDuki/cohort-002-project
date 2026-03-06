@@ -1,7 +1,7 @@
+import { CHAT_LIMIT } from "@/app/constants";
 import { SideBar } from "@/components/side-bar";
 import { TopBar } from "@/components/top-bar";
 import { loadChats, loadMemories } from "@/lib/persistence-layer";
-import { CHAT_LIMIT } from "../page";
 import { loadEmails, searchWithEmbeddings, searchWithRRF } from "../search";
 import { EmailList } from "./email-list";
 import { PerPageSelector } from "./per-page-selector";
