@@ -4,11 +4,7 @@ import { cosineSimilarity, embed, embedMany } from "ai";
 import fs from "fs/promises";
 import BM25 from "okapibm25";
 import path from "path";
-import {
-  ensureEmbeddingsCacheDirectory,
-  getCachedEmbedding,
-  writeEmbeddingToCache,
-} from "./embeddings";
+import { ensureEmbeddingsCacheDirectory, getCachedEmbedding, writeEmbeddingToCache, } from "./embeddings";
 
 export interface Email {
   id: string;
@@ -130,7 +126,7 @@ export async function loadOrGenerateEmbeddings(
       );
 
       const { embeddings } = await embedMany({
-        model: google.textEmbeddingModel("text-embedding-004"),
+        model: google.textEmbeddingModel("gemini-embedding-001"),
         values: batch.map((e) => emailChunkToText(e)),
       });
 
@@ -157,8 +153,12 @@ export async function searchWithEmbeddings(
   const emailEmbeddings = await loadOrGenerateEmbeddings(emailChunks);
 
   // Generate query embedding
+  if (!query) {
+    return []
+  }
+
   const { embedding: queryEmbedding } = await embed({
-    model: google.textEmbeddingModel("text-embedding-004"),
+    model: google.textEmbeddingModel("gemini-embedding-001"),
     value: query,
   });
 
@@ -212,6 +212,6 @@ export const searchWithRRF = async (query: string, emails: Email[]) => {
     emailChunks
   );
   const embeddingsRanking = await searchWithEmbeddings(query, emailChunks);
-  const rrfRanking = reciprocalRankFusion([bm25Ranking, embeddingsRanking]);
-  return rrfRanking;
+
+  return reciprocalRankFusion([bm25Ranking, embeddingsRanking]);
 };
