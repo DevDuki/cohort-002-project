@@ -1,5 +1,7 @@
 import {
   chunkEmails,
+  emailChunkToId,
+  emailChunkToText,
   loadEmails,
   reciprocalRankFusion,
   searchWithBM25,
@@ -38,16 +40,19 @@ export const searchTool = (messages: UIMessage[]) =>
 
       // Use search algorithm from lesson 2.2
       const bm25Results = keywords
-        ? await searchWithBM25(keywords, emailChunks)
+        ? await searchWithBM25(keywords, emailChunks, emailChunkToText)
         : [];
       const embeddingResults = searchQuery
-        ? await searchWithEmbeddings(searchQuery, emailChunks)
+        ? await searchWithEmbeddings(searchQuery, emailChunks, emailChunkToText)
         : [];
-      const rrfResults = reciprocalRankFusion([
-        // Only take the top NUMBER_PASSED_TO_RERANKER results from each search
-        bm25Results.slice(0, NUMBER_PASSED_TO_RERANKER),
-        embeddingResults.slice(0, NUMBER_PASSED_TO_RERANKER),
-      ]);
+      const rrfResults = reciprocalRankFusion(
+        [
+          // Only take the top NUMBER_PASSED_TO_RERANKER results from each search
+          bm25Results.slice(0, NUMBER_PASSED_TO_RERANKER),
+          embeddingResults.slice(0, NUMBER_PASSED_TO_RERANKER),
+        ],
+        emailChunkToId
+      );
 
       // Get conversation history without the tool calls
       const conversationHistory = convertToModelMessages(messages).filter(
@@ -59,7 +64,10 @@ export const searchTool = (messages: UIMessage[]) =>
         .filter(Boolean)
         .join(" ");
       const rerankedResults = await rerankEmails(
-        rrfResults.slice(0, NUMBER_PASSED_TO_RERANKER),
+        rrfResults.slice(0, NUMBER_PASSED_TO_RERANKER).map((r) => ({
+          email: r.item,
+          score: r.score,
+        })),
         query,
         conversationHistory
       );
