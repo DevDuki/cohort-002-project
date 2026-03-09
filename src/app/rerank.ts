@@ -65,8 +65,6 @@ Return the IDs as a simple array of numbers.`,
     ],
   });
 
-  console.log("Reranked results:", rerankedResults.object.resultIds);
-
   return rerankedResults.object.resultIds
     .map((id) => resultsAsMap.get(id))
     .filter((r) => r !== undefined);

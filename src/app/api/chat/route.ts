@@ -56,10 +56,6 @@ export async function POST(req: Request) {
 
   const allMemories = await searchMemories({ messages });
   const memories = allMemories.slice(0, MEMORIES_TO_USE);
-  console.log(
-    "memories string",
-    memories.map((memory) => `- ${memoryToText(memory.item)}`).join("\n")
-  );
 
   let chat = await getChat(chatId);
   const mostRecentMessage = messages[messages.length - 1];

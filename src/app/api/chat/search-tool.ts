@@ -91,8 +91,6 @@ export const searchTool = (messages: UIMessage[]) =>
         };
       });
 
-      console.log("Top emails:", topEmails.length);
-
       return {
         emails: topEmails,
       };
