@@ -14,9 +14,13 @@ import {
 } from "ai";
 import { generateTitleForChat } from "./generate-title";
 import { searchTool } from "./search-tool";
+import { memoryToText, searchMemories } from "@/app/memory-search";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
+
+// Define how many memories to include per conversation
+const MEMORIES_TO_USE = 3;
 
 export type MyMessage = UIMessage<
   never,
@@ -50,6 +54,13 @@ export async function POST(req: Request) {
 
   const messages = validatedMessagesResult.data;
 
+  const allMemories = await searchMemories({ messages });
+  const memories = allMemories.slice(0, MEMORIES_TO_USE);
+  console.log(
+    "memories string",
+    memories.map((memory) => `- ${memoryToText(memory.item)}`).join("\n")
+  );
+
   let chat = await getChat(chatId);
   const mostRecentMessage = messages[messages.length - 1];
 
@@ -68,7 +79,6 @@ export async function POST(req: Request) {
       let generateTitlePromise: Promise<void> | undefined = undefined;
 
       if (!chat) {
-
         chat = await createChat({
           id: chatId,
           title: "Generating title...",
@@ -99,7 +109,7 @@ export async function POST(req: Request) {
       const result = streamText({
         model: google("gemini-2.5-flash-lite"),
         messages: convertToModelMessages(messages),
-          system: `
+        system: `
 <task-context>
 You are an email assistant that helps users find and understand information from their emails.
 </task-context>
@@ -139,6 +149,12 @@ You are an email assistant that helps users find and understand information from
 - If the first query doesn't find enough information, try different approaches or tools
 - Only after using tools should you formulate your answer based on the results
 </rules>
+
+<memories>
+Here are some memories that may be relevant to the conversation:
+
+${memories.map((memory) => `- ${memoryToText(memory.item)}`).join("\n")}
+</memories>
 
 <the-ask>
 Here is the user's question. Follow the multi-step workflow above to efficiently find and retrieve the information.

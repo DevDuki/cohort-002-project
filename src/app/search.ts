@@ -125,7 +125,7 @@ export async function loadOrGenerateEmbeddings<T>(
       );
 
       const { embeddings } = await embedMany({
-        model: google.textEmbeddingModel("text-embedding-004"),
+        model: google.textEmbeddingModel("gemini-embedding-001"),
         values: batch.map((item) => toText(item)),
       });
 
@@ -152,7 +152,7 @@ export async function searchWithEmbeddings<T>(
 
   // Generate query embedding
   const { embedding: queryEmbedding } = await embed({
-    model: google.textEmbeddingModel("text-embedding-004"),
+    model: google.textEmbeddingModel("gemini-embedding-001"),
     value: query,
   });
 
