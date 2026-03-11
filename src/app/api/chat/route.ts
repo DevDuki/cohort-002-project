@@ -43,14 +43,15 @@ const getTools = (messages: UIMessage[]) => ({
 
 export async function POST(req: Request) {
   const body: {
-    messages: UIMessage[];
+    message: UIMessage;
     id: string;
   } = await req.json();
 
   const chatId = body.id;
+  let chat = await getChat(chatId);
 
   const validatedMessagesResult = await safeValidateUIMessages<MyMessage>({
-    messages: body.messages,
+    messages: [...(chat?.messages ?? []), body.message],
   });
 
   if (!validatedMessagesResult.success) {
@@ -62,7 +63,6 @@ export async function POST(req: Request) {
   const allMemories = await searchMemories({ messages });
   const memories = allMemories.slice(0, MEMORIES_TO_USE);
 
-  let chat = await getChat(chatId);
   const mostRecentMessage = messages[messages.length - 1];
 
   if (!mostRecentMessage) {
