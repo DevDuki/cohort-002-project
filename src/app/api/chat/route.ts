@@ -16,6 +16,7 @@ import { generateTitleForChat } from "./generate-title";
 import { searchTool } from "./search-tool";
 import { memoryToText, searchMemories } from "@/app/memory-search";
 import { extractAndUpdateMemories } from "./extract-memories";
+import { searchMessages } from "@/app/message-search";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -26,6 +27,9 @@ const MEMORIES_TO_USE = 3;
 // User information for personalization
 const USER_FIRST_NAME = 'Sarah';
 const USER_LAST_NAME = 'Chen';
+
+const MESSAGE_HISTORY_LENGTH = 10;
+const OLD_MESSAGES_TO_USE = 10;
 
 export type MyMessage = UIMessage<
   never,
@@ -50,8 +54,14 @@ export async function POST(req: Request) {
   const chatId = body.id;
   let chat = await getChat(chatId);
 
+  const recentMessages = [...(chat?.messages ?? []), body.message].slice(
+    -MESSAGE_HISTORY_LENGTH
+  );
+
+  const olderMessages = chat?.messages.slice(0, -MESSAGE_HISTORY_LENGTH);
+
   const validatedMessagesResult = await safeValidateUIMessages<MyMessage>({
-    messages: [...(chat?.messages ?? []), body.message],
+    messages: recentMessages,
   });
 
   if (!validatedMessagesResult.success) {
@@ -59,6 +69,16 @@ export async function POST(req: Request) {
   }
 
   const messages = validatedMessagesResult.data;
+
+  const oldMessagesToUse = await searchMessages({
+    recentMessages: messages,
+    olderMessages: olderMessages ?? [],
+  }).then((results) =>
+    results
+      .slice(0, OLD_MESSAGES_TO_USE)
+      .sort((a, b) => b.score - a.score)
+      .map((result) => result.item)
+  );
 
   const allMemories = await searchMemories({ messages });
   const memories = allMemories.slice(0, MEMORIES_TO_USE);
@@ -107,9 +127,11 @@ export async function POST(req: Request) {
         await appendToChatMessages(chatId, [mostRecentMessage]);
       }
 
+      const messageHistoryForLLM = [...oldMessagesToUse, ...messages];
+
       const result = streamText({
         model: google("gemini-2.5-flash-lite"),
-        messages: convertToModelMessages(messages),
+        messages: convertToModelMessages(messageHistoryForLLM),
         system: `
 <task-context>
 You are a personal assistant to ${USER_FIRST_NAME} ${USER_LAST_NAME}. You help with general tasks, questions, and can access ${USER_FIRST_NAME}'s email when needed.
